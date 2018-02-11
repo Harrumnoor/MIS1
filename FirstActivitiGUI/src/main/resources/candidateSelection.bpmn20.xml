@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <process id="myProcess" name="My process" isExecutable="true">
+    <startEvent id="startevent1" name="Start"></startEvent>
+    <userTask id="submitApplication" name="Kindly fill your Application form - (Applicants)" activiti:assignee="Candidate">
+      <extensionElements>
+        <activiti:formProperty id="username" name="Enter your name" type="string" variable="username" required="true"></activiti:formProperty>
+        <activiti:formProperty id="phoneNo" name="Phone Number" type="string" variable="phoneNo"></activiti:formProperty>
+        <activiti:formProperty id="age" name="Age" type="string" variable="age"></activiti:formProperty>
+        <activiti:formProperty id="experience" name="Years of Experience" type="string" variable="experience"></activiti:formProperty>
+        <activiti:formProperty id="qualification" name="Qualification" type="string" variable="qualification"></activiti:formProperty>
+        <activiti:formProperty id="email" name="Email" type="string" variable="email"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow1" sourceRef="startevent1" targetRef="submitApplication"></sequenceFlow>
+    <scriptTask id="reviewApps" name="Review Applications" scriptFormat="groovy" activiti:autoStoreVariables="false">
+      <script>out.println()
+      		  out.println("Displaying Candidates's Application")
+      		  out.println(username)
+			  out.println(age)
+			  out.println(experience)
+			  out.println()
+
+	  </script>
+    </scriptTask>
+    <serviceTask id="rejected" name="Send Rejection Email To Candidate - (Manager)" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${email}]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Rejected]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:string><![CDATA[Hello, we are sorry to inform you that your application has been rejected!!]]></activiti:string>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <userTask id="usertask1" name="Accept or Reject">
+      <extensionElements>
+        <activiti:formProperty id="approveRequest" name="Do you Accept or Reject the Application? - (Manager)" type="enum" variable="approveRequest">
+          <activiti:value id="true" name="Yes"></activiti:value>
+          <activiti:value id="false" name="No"></activiti:value>
+        </activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow2" sourceRef="reviewApps" targetRef="usertask1"></sequenceFlow>
+    <exclusiveGateway id="exclusivegateway1" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow3" sourceRef="usertask1" targetRef="exclusivegateway1"></sequenceFlow>
+    <sequenceFlow id="rejectedd" name="No" sourceRef="exclusivegateway1" targetRef="rejected">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approveRequest=='No'}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="servicetask1" name="Call For Interview" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${email}]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Candidate Accepted]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:expression><![CDATA[Hello ${username}, we are glad to inform you that you have been selected for the Interview!]]></activiti:expression>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="flow4" name="Yes" sourceRef="exclusivegateway1" targetRef="servicetask1">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approveRequest=='Yes'}]]></conditionExpression>
+    </sequenceFlow>
+    <manualTask id="manualtask1" name="Conduct Interview"></manualTask>
+    <sequenceFlow id="flow5" sourceRef="servicetask1" targetRef="manualtask1"></sequenceFlow>
+    <exclusiveGateway id="AcceptorReject" name="accept or reject"></exclusiveGateway>
+    <serviceTask id="Accepted" name="Send Confirmation Email To Candidate" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${email}]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Accepted]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:expression><![CDATA[Hello ${username} we are glad to inform you that you have been selected for the job.]]></activiti:expression>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <serviceTask id="Reject_Candidate" name="Send Rejection Email To Candidate" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${email}]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Rejection Email]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:expression><![CDATA[Hello ${username}, we are sorry to inform you that you have not been selected for the Job.]]></activiti:expression>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="Rejected" name="Candidate Rejected" sourceRef="AcceptorReject" targetRef="Reject_Candidate">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approveRequest=='No'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Acceptedd" name="Candidate Accepted" sourceRef="AcceptorReject" targetRef="Accepted">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approveRequest=='Yes'}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask id="Judge" name="Judge and Decide">
+      <extensionElements>
+        <activiti:formProperty id="approveRequest" name="Do you want to Accept or Reject after Interview? - (Manager)" type="enum" variable="approveRequest">
+          <activiti:value id="true" name="Yes"></activiti:value>
+          <activiti:value id="false" name="No"></activiti:value>
+        </activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow8" sourceRef="Judge" targetRef="AcceptorReject"></sequenceFlow>
+    <sequenceFlow id="flow9" sourceRef="manualtask1" targetRef="Judge"></sequenceFlow>
+    <endEvent id="endevent1" name="Rejected"></endEvent>
+    <endEvent id="endevent2" name="End"></endEvent>
+    <endEvent id="endevent3" name="End"></endEvent>
+    <sequenceFlow id="flow11" name="Rejected" sourceRef="Reject_Candidate" targetRef="endevent2"></sequenceFlow>
+    <sequenceFlow id="flow12" name="Get Hired!!!" sourceRef="Accepted" targetRef="endevent3"></sequenceFlow>
+    <sequenceFlow id="flow13" name="Rejected" sourceRef="rejected" targetRef="endevent1"></sequenceFlow>
+    <sequenceFlow id="flow14" sourceRef="submitApplication" targetRef="reviewApps"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_myProcess">
+    <bpmndi:BPMNPlane bpmnElement="myProcess" id="BPMNPlane_myProcess">
+      <bpmndi:BPMNShape bpmnElement="startevent1" id="BPMNShape_startevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="0.0" y="11.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="submitApplication" id="BPMNShape_submitApplication">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="1.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="reviewApps" id="BPMNShape_reviewApps">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="158.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="rejected" id="BPMNShape_rejected">
+        <omgdc:Bounds height="76.0" width="141.0" x="280.0" y="336.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="usertask1" id="BPMNShape_usertask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="245.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway1" id="BPMNShape_exclusivegateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="230.0" y="252.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="servicetask1" id="BPMNShape_servicetask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="280.0" y="153.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="manualtask1" id="BPMNShape_manualtask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="438.0" y="153.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="AcceptorReject" id="BPMNShape_AcceptorReject">
+        <omgdc:Bounds height="40.0" width="40.0" x="580.0" y="252.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Accepted" id="BPMNShape_Accepted">
+        <omgdc:Bounds height="68.0" width="131.0" x="680.0" y="292.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Reject_Candidate" id="BPMNShape_Reject_Candidate">
+        <omgdc:Bounds height="83.0" width="131.0" x="680.0" y="186.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Judge" id="BPMNShape_Judge">
+        <omgdc:Bounds height="55.0" width="105.0" x="438.0" y="245.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent1" id="BPMNShape_endevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="473.0" y="356.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent2" id="BPMNShape_endevent2">
+        <omgdc:Bounds height="35.0" width="35.0" x="870.0" y="201.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent3" id="BPMNShape_endevent3">
+        <omgdc:Bounds height="35.0" width="35.0" x="870.0" y="308.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="35.0" y="28.0"></omgdi:waypoint>
+        <omgdi:waypoint x="70.0" y="28.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="122.0" y="213.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="245.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="175.0" y="272.0"></omgdi:waypoint>
+        <omgdi:waypoint x="230.0" y="272.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="rejectedd" id="BPMNEdge_rejectedd">
+        <omgdi:waypoint x="250.0" y="292.0"></omgdi:waypoint>
+        <omgdi:waypoint x="250.0" y="375.0"></omgdi:waypoint>
+        <omgdi:waypoint x="280.0" y="374.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="13.0" x="261.0" y="314.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="250.0" y="252.0"></omgdi:waypoint>
+        <omgdi:waypoint x="250.0" y="181.0"></omgdi:waypoint>
+        <omgdi:waypoint x="280.0" y="180.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="20.0" x="261.0" y="222.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="385.0" y="180.0"></omgdi:waypoint>
+        <omgdi:waypoint x="438.0" y="180.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="Rejected" id="BPMNEdge_Rejected">
+        <omgdi:waypoint x="600.0" y="252.0"></omgdi:waypoint>
+        <omgdi:waypoint x="599.0" y="227.0"></omgdi:waypoint>
+        <omgdi:waypoint x="680.0" y="227.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="581.0" y="213.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="Acceptedd" id="BPMNEdge_Acceptedd">
+        <omgdi:waypoint x="600.0" y="292.0"></omgdi:waypoint>
+        <omgdi:waypoint x="600.0" y="327.0"></omgdi:waypoint>
+        <omgdi:waypoint x="680.0" y="326.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="98.0" x="577.0" y="327.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow8" id="BPMNEdge_flow8">
+        <omgdi:waypoint x="543.0" y="272.0"></omgdi:waypoint>
+        <omgdi:waypoint x="580.0" y="272.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow9" id="BPMNEdge_flow9">
+        <omgdi:waypoint x="490.0" y="208.0"></omgdi:waypoint>
+        <omgdi:waypoint x="490.0" y="245.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow11" id="BPMNEdge_flow11">
+        <omgdi:waypoint x="811.0" y="227.0"></omgdi:waypoint>
+        <omgdi:waypoint x="811.0" y="218.0"></omgdi:waypoint>
+        <omgdi:waypoint x="870.0" y="218.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="42.0" x="869.0" y="254.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow12" id="BPMNEdge_flow12">
+        <omgdi:waypoint x="811.0" y="326.0"></omgdi:waypoint>
+        <omgdi:waypoint x="870.0" y="325.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="51.0" x="869.0" y="351.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow13" id="BPMNEdge_flow13">
+        <omgdi:waypoint x="421.0" y="374.0"></omgdi:waypoint>
+        <omgdi:waypoint x="473.0" y="373.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="42.0" x="472.0" y="399.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow14" id="BPMNEdge_flow14">
+        <omgdi:waypoint x="122.0" y="56.0"></omgdi:waypoint>
+        <omgdi:waypoint x="122.0" y="158.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

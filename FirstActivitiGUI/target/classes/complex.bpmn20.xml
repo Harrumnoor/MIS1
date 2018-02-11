@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <process id="myProcess" name="My process" isExecutable="true">
+    <startEvent id="startevent1" name="Start"></startEvent>
+    <userTask id="inputApp" name="Submit Application">
+      <extensionElements>
+        <activiti:formProperty id="name" name="Name" type="string"></activiti:formProperty>
+        <activiti:formProperty id="age" name="Age" type="string"></activiti:formProperty>
+        <activiti:formProperty id="status" name="Employment Status" type="string"></activiti:formProperty>
+        <activiti:formProperty id="email" name="Email" type="string" variable="email"></activiti:formProperty>
+        <activiti:formProperty id="maritalStatus" name="Marital Status" type="string"></activiti:formProperty>
+        <activiti:formProperty id="salary" name="Current Salary" type="string" variable="salary"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow1" sourceRef="startevent1" targetRef="inputApp"></sequenceFlow>
+    <serviceTask id="reviewApp" name="Review Application" activiti:class="Activiti.ResumeService"></serviceTask>
+    <sequenceFlow id="flow2" sourceRef="inputApp" targetRef="reviewApp"></sequenceFlow>
+    <userTask id="acceptApp" name="Accept/Reject request">
+      <extensionElements>
+        <activiti:formProperty id="acceptLoanRequest" name="Do you Accept or Reject Loan Request?" type="enum" variable="acceptLoanRequest">
+          <activiti:value id="true" name="Yes"></activiti:value>
+          <activiti:value id="false" name="No"></activiti:value>
+        </activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow3" sourceRef="reviewApp" targetRef="acceptApp"></sequenceFlow>
+    <exclusiveGateway id="exclusivegateway1" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow4" sourceRef="acceptApp" targetRef="exclusivegateway1"></sequenceFlow>
+    <serviceTask id="rejectRequest" name="Send Rejection Email" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${email}]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Rejected]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:string><![CDATA[Hello, we are sorry to inform you that your application has been rejected!!]]></activiti:string>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="rejection" sourceRef="exclusivegateway1" targetRef="rejectRequest">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${acceptLoanRequest=='No'}]]></conditionExpression>
+    </sequenceFlow>
+    <subProcess id="analysis" name="In-depth Analysis">
+      <extensionElements>
+        <activiti:in source="salary" target="salary"></activiti:in>
+      </extensionElements>
+      <startEvent id="startevent2" name="Start"></startEvent>
+      <parallelGateway id="parallelgateway1" name="Parallel Gateway"></parallelGateway>
+      <sequenceFlow id="flow5" sourceRef="startevent2" targetRef="parallelgateway1"></sequenceFlow>
+      <userTask id="medicalAnalysis" name="Medical Analysis">
+        <extensionElements>
+          <activiti:formProperty id="bloodGroup" name="Identify your Blood Group" type="enum" variable="bloodGroup">
+            <activiti:value id="type1" name="A-"></activiti:value>
+            <activiti:value id="type2" name="A+"></activiti:value>
+            <activiti:value id="type3" name="B+"></activiti:value>
+            <activiti:value id="type4" name="B-"></activiti:value>
+            <activiti:value id="type5" name="O-"></activiti:value>
+          </activiti:formProperty>
+        </extensionElements>
+      </userTask>
+      <sequenceFlow id="flow6" sourceRef="parallelgateway1" targetRef="medicalAnalysis"></sequenceFlow>
+      <serviceTask id="riskAnalysis" name="Risk Analysis" activiti:class="Activiti.RiskEvaluation">
+        <extensionElements>
+          <activiti:field name="risk">
+            <activiti:expression><![CDATA[true]]></activiti:expression>
+          </activiti:field>
+        </extensionElements>
+      </serviceTask>
+      <sequenceFlow id="flow9" sourceRef="parallelgateway1" targetRef="riskAnalysis"></sequenceFlow>
+      <serviceTask id="meetingCall" name="Call for Meeting" activiti:class="Activiti.EmailSender">
+        <extensionElements>
+          <activiti:field name="to">
+            <activiti:expression><![CDATA[${email}]]></activiti:expression>
+          </activiti:field>
+          <activiti:field name="subject">
+            <activiti:string><![CDATA[Meeting Call]]></activiti:string>
+          </activiti:field>
+          <activiti:field name="text">
+            <activiti:string><![CDATA[Hello]]></activiti:string>
+          </activiti:field>
+        </extensionElements>
+      </serviceTask>
+      <endEvent id="endevent2" name="End"></endEvent>
+      <sequenceFlow id="flow14" sourceRef="meetingCall" targetRef="endevent2"></sequenceFlow>
+      <parallelGateway id="parallelgateway2" name="Parallel Gateway"></parallelGateway>
+      <sequenceFlow id="meetingCallFlow" sourceRef="parallelgateway2" targetRef="meetingCall">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${risk=='false'}]]></conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="flow16" sourceRef="riskAnalysis" targetRef="parallelgateway2"></sequenceFlow>
+      <sequenceFlow id="flow17" sourceRef="medicalAnalysis" targetRef="parallelgateway2"></sequenceFlow>
+      <sequenceFlow id="flow18" sourceRef="parallelgateway2" targetRef="endevent2">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${risk=='true'}]]></conditionExpression>
+      </sequenceFlow>
+    </subProcess>
+    <endEvent id="endevent1" name="End"></endEvent>
+    <sequenceFlow id="flow13" sourceRef="rejectRequest" targetRef="endevent1"></sequenceFlow>
+    <callActivity id="callactivity1" name="Call activity" calledElement="analysis">
+    
+    </callActivity>
+    <sequenceFlow id="flow19" sourceRef="exclusivegateway1" targetRef="callactivity1">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${acceptLoanRequest=='Yes'}]]></conditionExpression>
+    </sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_myProcess">
+    <bpmndi:BPMNPlane bpmnElement="myProcess" id="BPMNPlane_myProcess">
+      <bpmndi:BPMNShape bpmnElement="startevent1" id="BPMNShape_startevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="14.0" y="82.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="inputApp" id="BPMNShape_inputApp">
+        <omgdc:Bounds height="55.0" width="105.0" x="74.0" y="72.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="reviewApp" id="BPMNShape_reviewApp">
+        <omgdc:Bounds height="55.0" width="105.0" x="203.0" y="72.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="acceptApp" id="BPMNShape_acceptApp">
+        <omgdc:Bounds height="61.0" width="105.0" x="343.0" y="69.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway1" id="BPMNShape_exclusivegateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="482.0" y="79.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="rejectRequest" id="BPMNShape_rejectRequest">
+        <omgdc:Bounds height="55.0" width="111.0" x="582.0" y="18.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="analysis" id="BPMNShape_analysis">
+        <omgdc:Bounds height="291.0" width="321.0" x="74.0" y="170.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="startevent2" id="BPMNShape_startevent2">
+        <omgdc:Bounds height="35.0" width="35.0" x="94.0" y="190.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="parallelgateway1" id="BPMNShape_parallelgateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="188.0" y="187.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="medicalAnalysis" id="BPMNShape_medicalAnalysis">
+        <omgdc:Bounds height="55.0" width="105.0" x="94.0" y="263.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="riskAnalysis" id="BPMNShape_riskAnalysis">
+        <omgdc:Bounds height="55.0" width="105.0" x="238.0" y="263.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="meetingCall" id="BPMNShape_meetingCall">
+        <omgdc:Bounds height="55.0" width="105.0" x="166.0" y="400.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent2" id="BPMNShape_endevent2">
+        <omgdc:Bounds height="35.0" width="35.0" x="308.0" y="410.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="parallelgateway2" id="BPMNShape_parallelgateway2">
+        <omgdc:Bounds height="40.0" width="40.0" x="198.0" y="332.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent1" id="BPMNShape_endevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="750.0" y="28.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="callactivity1" id="BPMNShape_callactivity1">
+        <omgdc:Bounds height="97.0" width="183.0" x="578.0" y="200.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="49.0" y="99.0"></omgdi:waypoint>
+        <omgdi:waypoint x="74.0" y="99.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="179.0" y="99.0"></omgdi:waypoint>
+        <omgdi:waypoint x="203.0" y="99.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="308.0" y="99.0"></omgdi:waypoint>
+        <omgdi:waypoint x="343.0" y="99.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="448.0" y="99.0"></omgdi:waypoint>
+        <omgdi:waypoint x="482.0" y="99.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="rejection" id="BPMNEdge_rejection">
+        <omgdi:waypoint x="502.0" y="79.0"></omgdi:waypoint>
+        <omgdi:waypoint x="502.0" y="45.0"></omgdi:waypoint>
+        <omgdi:waypoint x="582.0" y="45.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="129.0" y="207.0"></omgdi:waypoint>
+        <omgdi:waypoint x="188.0" y="207.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="188.0" y="207.0"></omgdi:waypoint>
+        <omgdi:waypoint x="143.0" y="207.0"></omgdi:waypoint>
+        <omgdi:waypoint x="143.0" y="252.0"></omgdi:waypoint>
+        <omgdi:waypoint x="146.0" y="263.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow9" id="BPMNEdge_flow9">
+        <omgdi:waypoint x="228.0" y="207.0"></omgdi:waypoint>
+        <omgdi:waypoint x="248.0" y="207.0"></omgdi:waypoint>
+        <omgdi:waypoint x="290.0" y="207.0"></omgdi:waypoint>
+        <omgdi:waypoint x="290.0" y="263.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow14" id="BPMNEdge_flow14">
+        <omgdi:waypoint x="271.0" y="427.0"></omgdi:waypoint>
+        <omgdi:waypoint x="308.0" y="427.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="meetingCallFlow" id="BPMNEdge_meetingCallFlow">
+        <omgdi:waypoint x="218.0" y="372.0"></omgdi:waypoint>
+        <omgdi:waypoint x="218.0" y="400.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow16" id="BPMNEdge_flow16">
+        <omgdi:waypoint x="290.0" y="318.0"></omgdi:waypoint>
+        <omgdi:waypoint x="290.0" y="351.0"></omgdi:waypoint>
+        <omgdi:waypoint x="238.0" y="352.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow17" id="BPMNEdge_flow17">
+        <omgdi:waypoint x="146.0" y="318.0"></omgdi:waypoint>
+        <omgdi:waypoint x="146.0" y="351.0"></omgdi:waypoint>
+        <omgdi:waypoint x="198.0" y="352.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow18" id="BPMNEdge_flow18">
+        <omgdi:waypoint x="238.0" y="352.0"></omgdi:waypoint>
+        <omgdi:waypoint x="325.0" y="351.0"></omgdi:waypoint>
+        <omgdi:waypoint x="325.0" y="410.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow13" id="BPMNEdge_flow13">
+        <omgdi:waypoint x="693.0" y="45.0"></omgdi:waypoint>
+        <omgdi:waypoint x="750.0" y="45.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow19" id="BPMNEdge_flow19">
+        <omgdi:waypoint x="502.0" y="119.0"></omgdi:waypoint>
+        <omgdi:waypoint x="502.0" y="248.0"></omgdi:waypoint>
+        <omgdi:waypoint x="578.0" y="248.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

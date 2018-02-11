@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="Examples" id="taskAssigneeExample">
+  <process id="myProcess" name="Process creating and handling loan request" isExecutable="true">
+    <startEvent id="startevent1" name="Start"></startEvent>
+    <userTask id="loanRequest" name="Submit Loan Request">
+      <extensionElements>
+        <activiti:formProperty id="name" name="Name" type="string" variable="name"></activiti:formProperty>
+        <activiti:formProperty id="email" name="Email" type="string" variable="email"></activiti:formProperty>
+        <activiti:formProperty id="age" name="Age" type="string" variable="age"></activiti:formProperty>
+        <activiti:formProperty id="maritalStatus" name="Marital Status" type="string" variable="maritalStatus"></activiti:formProperty>
+        <activiti:formProperty id="existingCust" name="Are you an existing Customer?" type="enum" variable="existingCust">
+          <activiti:value id="true" name="Yes"></activiti:value>
+          <activiti:value id="false" name="No"></activiti:value>
+        </activiti:formProperty>
+        <activiti:formProperty id="employed" name="Employed or Unemployed?" type="enum" variable="employed">
+          <activiti:value id="true" name="Yes"></activiti:value>
+          <activiti:value id="false" name="No"></activiti:value>
+        </activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow1" sourceRef="startevent1" targetRef="loanRequest"></sequenceFlow>
+    <serviceTask id="EvaluateRisk" name="Evaluate Risk" activiti:class="Activiti.RiskEvaluation">
+      <extensionElements>
+        <activiti:field name="name">
+          <activiti:string><![CDATA[Name]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="age">
+          <activiti:string><![CDATA[Age]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="employed">
+          <activiti:string><![CDATA[Employed or UnEmployed?]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="maritalStatus">
+          <activiti:string><![CDATA[Marital Status]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="existingCust">
+          <activiti:string><![CDATA[Existing Customer?]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="risk">
+          <activiti:string><![CDATA[Risk]]></activiti:string>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="flow2" sourceRef="loanRequest" targetRef="EvaluateRisk"></sequenceFlow>
+    <scriptTask id="reviewApp" name="Review Application" scriptFormat="groovy" activiti:autoStoreVariables="false">
+      <script>out.println()
+      		  out.println("Review Application")
+      		  out.println(name)
+			  out.println(age)
+			  out.println(risk)
+			  out.println()
+	  </script>
+    </scriptTask>
+    <sequenceFlow id="flow3" sourceRef="EvaluateRisk" targetRef="reviewApp"></sequenceFlow>
+    <userTask id="decide" name="Accept Loan Request or Reject?">
+      <extensionElements>
+        <activiti:formProperty id="approveRequest" name="Accept Loan Request or Reject?" type="enum" variable="approveRequest">
+          <activiti:value id="true" name="Yes"></activiti:value>
+          <activiti:value id="false" name="No"></activiti:value>
+        </activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow4" sourceRef="reviewApp" targetRef="decide"></sequenceFlow>
+    <exclusiveGateway id="acceptReject" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow5" sourceRef="decide" targetRef="acceptReject"></sequenceFlow>
+    <serviceTask id="accept" name="Send Loan Approval Letter" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${email}]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Accepted]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:string><![CDATA[Hello, we are glad to inform you that your request for loan has been approved!!]]></activiti:string>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <serviceTask id="reject" name="Send Loan Rejection Letter" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${email}]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Rejected]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:string><![CDATA[Hello, we are sorry to inform you that your request for loan has been rejected!!]]></activiti:string>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="no" name="Rejected" sourceRef="acceptReject" targetRef="reject">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approveRequest=='No'}]]></conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endevent1" name="Request Accepted "></endEvent>
+    <endEvent id="endevent2" name="End"></endEvent>
+    <sequenceFlow id="flow7" name="Request Rejected" sourceRef="reject" targetRef="endevent2"></sequenceFlow>
+    <serviceTask id="servicetask1" name="Notify Main Branch" activiti:async="true" activiti:class="Activiti.EmailSender">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:string><![CDATA[sana.shah94.ss@gmail.com]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Rejected]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:string><![CDATA[Hello, we are sorry to inform you that your request for loan has been rejected!!]]></activiti:string>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="flow10" sourceRef="accept" targetRef="servicetask1"></sequenceFlow>
+    <sequenceFlow id="flow11" name="Request Accepted" sourceRef="servicetask1" targetRef="endevent1"></sequenceFlow>
+    <sequenceFlow id="flow12" name="Accepted" sourceRef="acceptReject" targetRef="accept"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_myProcess">
+    <bpmndi:BPMNPlane bpmnElement="myProcess" id="BPMNPlane_myProcess">
+      <bpmndi:BPMNShape bpmnElement="startevent1" id="BPMNShape_startevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="10.0" y="180.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="loanRequest" id="BPMNShape_loanRequest">
+        <omgdc:Bounds height="71.0" width="105.0" x="60.0" y="162.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EvaluateRisk" id="BPMNShape_EvaluateRisk">
+        <omgdc:Bounds height="75.0" width="121.0" x="182.0" y="160.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="reviewApp" id="BPMNShape_reviewApp">
+        <omgdc:Bounds height="65.0" width="115.0" x="320.0" y="165.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="decide" id="BPMNShape_decide">
+        <omgdc:Bounds height="60.0" width="111.0" x="460.0" y="168.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="acceptReject" id="BPMNShape_acceptReject">
+        <omgdc:Bounds height="40.0" width="40.0" x="590.0" y="177.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="accept" id="BPMNShape_accept">
+        <omgdc:Bounds height="61.0" width="115.0" x="673.0" y="80.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="reject" id="BPMNShape_reject">
+        <omgdc:Bounds height="64.0" width="115.0" x="673.0" y="258.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent1" id="BPMNShape_endevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="950.0" y="93.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent2" id="BPMNShape_endevent2">
+        <omgdc:Bounds height="35.0" width="35.0" x="843.0" y="272.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="servicetask1" id="BPMNShape_servicetask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="820.0" y="83.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="45.0" y="197.0"></omgdi:waypoint>
+        <omgdi:waypoint x="60.0" y="197.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="165.0" y="197.0"></omgdi:waypoint>
+        <omgdi:waypoint x="182.0" y="197.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="303.0" y="197.0"></omgdi:waypoint>
+        <omgdi:waypoint x="320.0" y="197.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="435.0" y="197.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="198.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="571.0" y="198.0"></omgdi:waypoint>
+        <omgdi:waypoint x="590.0" y="197.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="no" id="BPMNEdge_no">
+        <omgdi:waypoint x="610.0" y="217.0"></omgdi:waypoint>
+        <omgdi:waypoint x="610.0" y="285.0"></omgdi:waypoint>
+        <omgdi:waypoint x="673.0" y="290.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="42.0" x="620.0" y="269.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="788.0" y="290.0"></omgdi:waypoint>
+        <omgdi:waypoint x="843.0" y="289.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="85.0" x="809.0" y="307.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow10" id="BPMNEdge_flow10">
+        <omgdi:waypoint x="788.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="820.0" y="110.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow11" id="BPMNEdge_flow11">
+        <omgdi:waypoint x="925.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="950.0" y="110.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="929.0" y="137.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow12" id="BPMNEdge_flow12">
+        <omgdi:waypoint x="610.0" y="177.0"></omgdi:waypoint>
+        <omgdi:waypoint x="610.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="673.0" y="110.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="620.0" y="115.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
